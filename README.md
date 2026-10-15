@@ -6,7 +6,7 @@ A mobile-friendly party card game groups play together from their phones while a
 
 **Status:** live and in use. 22 players across 6 groups have played 338 rounds. Works end to end: sign-in, group creation, card building, live multiplayer rounds, TV display and scoring.
 
-**How it was built:** I designed the product and directed an AI coding agent (Claude Code) to write it, reviewing and approving every change, including 50+ database migrations. Privacy is enforced at the database level, so only a group's members can read its content; I also closed a realtime broadcast leak of joke text.
+**How it was built:** I designed the product and directed an AI coding agent (Claude Code) to write it, approving every change, including 50+ database migrations. Privacy is enforced at the database level, so only a group's members can read its content; I also closed a realtime broadcast leak of joke text.
 
 ## Stack
 
