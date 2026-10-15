@@ -2,7 +2,11 @@
 
 A mobile-friendly party card game groups play together from their phones while a shared TV or laptop screen (`/tv`) shows the live state. Players sign in, join a persistent "group" (friends or family) via invite code or QR, and build a shared pool of custom prompt/response cards — often photos or short videos of real inside jokes — in a Card Bank. A host starts a session, an optional "Card Rush" lets everyone add last-minute cards, then rounds play out Apples-to-Apples style: a rotating judge poses a prompt card, everyone else submits from their hand, the judge picks a favorite, and the server enforces every rule of play.
 
-**Status:** works end to end — sign-in, group creation, card building, live multi-player rounds, TV display, scoring — tested by the author across a handful of browsers/incognito sessions, though not yet across a broad range of real devices.
+**Live:** [insidejoke.vercel.app](https://insidejoke.vercel.app)
+
+**Status:** live and in use. 22 players across 6 groups have played 338 rounds. Works end to end: sign-in, group creation, card building, live multiplayer rounds, TV display and scoring.
+
+**How it was built:** I designed the product and directed an AI coding agent (Claude Code) to write it, reviewing and approving every change, including 50+ database migrations. Privacy is enforced at the database level, so only a group's members can read its content; I found and closed a realtime broadcast leak that exposed card text.
 
 ## Stack
 
