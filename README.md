@@ -8,7 +8,15 @@ About 22 players have played 300+ rounds so far.
 
 ## How to play (24-second video)
 
-[![How to play Inside Joke](media/how-to-play-poster.jpg)](media/how-to-play.mp4)
+
+
+https://github.com/user-attachments/assets/41b5f5db-163d-4216-b063-7565110fbf34
+
+
+
+https://github.com/user-attachments/assets/2fecf800-e854-4f7f-a53a-475c436c3a2b
+
+
 
 ## How it plays
 
