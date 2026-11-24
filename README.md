@@ -1,33 +1,79 @@
-# Inside Joke — Party Card Game
+# Inside Joke
 
-A mobile-friendly party card game groups play together from their phones while a shared TV or laptop screen (`/tv`) shows the live state. Players sign in, join a persistent "group" (friends or family) via invite code or QR, and build a shared pool of custom prompt/response cards — often photos or short videos of real inside jokes — in a Card Bank. A host starts a session, an optional "Card Rush" lets everyone add last-minute cards, then rounds play out Apples-to-Apples style: a rotating judge poses a prompt card, everyone else submits from their hand, the judge picks a favorite, and the server enforces every rule of play.
+**Play it: https://insidejoke.vercel.app**
 
-**Live:** [insidejoke.vercel.app](https://insidejoke.vercel.app)
+A live party game for friend groups. Everyone writes jokes about the group on their phone, the jokes get shuffled into one deck, and players take turns judging which one best fits a prompt. A shared TV screen shows the game to the whole room.
 
-**Status:** live and in use. 22 players across 6 groups have played 338 rounds. Works end to end: sign-in, group creation, card building, live multiplayer rounds, TV display and scoring.
+About 22 players have played 300+ rounds so far.
 
-**How it was built:** I designed the product and directed an AI coding agent (Claude Code) to write it, approving every change, including 50+ database migrations. Privacy is enforced at the database level, so only a group's members can read its content; I also closed a realtime broadcast leak of joke text.
+## How to play (24-second video)
 
-## Stack
+[![How to play Inside Joke](media/how-to-play-poster.jpg)](media/how-to-play.mp4)
 
-- **Frontend:** React + Vite, deployed as a static SPA
-- **Backend:** Supabase (Postgres, Auth, Realtime, Storage)
-- **Styling:** Tailwind CSS
+## How it plays
 
-## Why this was technically interesting to build
-
-**Server-side game enforcement, not client trust.** Every rule that matters for fairness — dealing hands, validating submissions, picking a winner, deduping repeat cards, resolving timers — runs inside Postgres via `SECURITY DEFINER` functions rather than in client JavaScript. A player's browser can't submit an invalid card, see another player's hand, or force a round outcome by racing requests; the database is the arbiter, not a suggestion. That constraint shaped the schema from day one: game state transitions had to be modeled as atomic server-side operations instead of "read state, mutate in JS, write it back."
-
-**Real-time sync without a custom server.** All connected players and the TV display stay in sync via Supabase's realtime channels (Postgres change feeds pushed over websockets), so a judge's pick or a new round appears instantly on every device without polling or a bespoke WebSocket backend.
-
-**A read-only public display surface.** The `/tv` route is a separate, unauthenticated view designed to be pulled up on a shared screen — it renders the same live game state as the players' phones but exposes no game actions, which meant carefully separating "what this screen may read" from "what this screen may do."
-
-**Progressive identity instead of an upfront login wall.** The app opens an anonymous Supabase session automatically on load so a new player can start interacting immediately, then gates actual gameplay behind an upgrade to a real identity (email or Google) via a dedicated linking flow — trading a harder security boundary for a softer first-run experience, without weakening enforcement once real game actions are on the line.
+1. **Join.** One person starts a group. Friends join with a code or QR code shown on the TV. New players watch a 24-second how-to-play video and a short rules screen.
+2. **Write (Card Rush).** Everyone gets 60 seconds to write jokes about the group. Whoever writes the most gets 1 bonus point.
+3. **Shuffle.** All the jokes go into one deck and get dealt out, so your hand mixes everyone's jokes.
+4. **Play.** Each round, a judge reads a prompt and everyone else plays a joke from their hand. Cards are shown with no names.
+5. **Pick.** The judge picks a winner. The player who played it gets 1 point, and whoever wrote it gets half a point. Then a new judge takes over.
 
 ## Screenshots
 
-None yet — the project doesn't currently have any captured screenshots or a demo recording. This section will be updated when some exist.
+| Join (how-to-play video) | Write | Play | Judge | Recap |
+|---|---|---|---|---|
+| <img src="screenshots/01-join.png" width="160"> | <img src="screenshots/02-writing.png" width="160"> | <img src="screenshots/03-round.png" width="160"> | <img src="screenshots/04-judge-pick.png" width="160"> | <img src="screenshots/05-recap.png" width="160"> |
 
----
+Screenshots use a test group with made-up names and jokes.
 
-Full source is private — this repo is a technical overview for portfolio purposes.
+## What I built and how
+
+I designed the game and built it by directing Claude Code. I decided what each change should do, reviewed every change before it shipped, and tested it in real games. As of November 2026 the project has 142 commits and 77 database migrations.
+
+The parts I'd point to:
+
+- **Game rules run in the database, not the browser.** Dealing, submitting, picking a winner and timers run as Postgres functions. A player can't see someone else's hand or force a result by editing the page.
+- **Row-level security.** Only members of a group can read that group's jokes. I found and closed a leak where game content was readable through public reads. The TV now gets its state from one locked-down function that returns only what the screen needs, and only shows cards during judging.
+- **Realtime without a custom server.** Phones stay in sync through Supabase Realtime (database changes pushed over websockets). I also fixed reconnects so phones that drop off don't flood the server when they come back.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  P["Player phones<br/>(React app)"]
+  TV["Shared TV screen<br/>(/tv, read-only)"]
+  V["Vercel<br/>(hosts the app)"]
+  subgraph S["Supabase"]
+    A["Auth<br/>(Google / email)"]
+    DB[("Postgres<br/>row-level security +<br/>game-rule functions")]
+    RT["Realtime"]
+    ST["Storage<br/>(card photos/videos)"]
+  end
+  V -->|serves app| P
+  V -->|serves app| TV
+  P -->|sign in| A
+  P -->|play actions| DB
+  DB -->|live updates| RT
+  RT --> P
+  TV -->|polls one gated function| DB
+  P --> ST
+```
+
+## Stack
+
+- **Frontend:** React + Vite, Tailwind CSS, hosted on Vercel
+- **Backend:** Supabase: Postgres with row-level security, Auth, Realtime, Storage
+- **Built with:** Claude Code
+
+## What I learned from real players
+
+- **Fun has to start immediately.** New players got stuck on confusing setup screens before they'd played anything. Joining now takes you through a 24-second video and a short rules screen, then straight into Card Rush, the 60-second joke-writing sprint.
+- **Nobody reads the rules.** Players didn't understand how the game worked, and almost nobody read the written rules. I made a 24-second narrated how-to-play video (my own voice and captions, built in code) that plays when you join and loops on the TV in the lobby. The rules screen after it now covers only what the video doesn't.
+- **Writers deserve credit.** Players felt it was unfair that the person who wrote a winning joke got nothing. Now the player who plays it gets 1 point and the writer gets half a point.
+- **Volume shouldn't beat quality.** Card Rush used to give a point for every joke you wrote, so writing fast beat writing well. Now the player who writes the most gets a single bonus point.
+- **Games couldn't get stuck.** One group could end up with several lobbies, and if a player left mid-game, everyone else was stuck waiting for them. Each group now gets one lobby, and players who are idle for an hour are removed so the game can continue.
+- **Names change.** Players wanted to change their display name after joining, so now they can.
+
+## Why the code is private
+
+Inside Joke is a live app with real users' content: their jokes, names and photos. The code stays private so its database setup, security policies and scripts aren't a public map to that data. This repo shows what the game does and how it's built. I'm happy to walk through the code live.
